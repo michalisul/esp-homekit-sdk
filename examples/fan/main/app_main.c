@@ -104,7 +104,7 @@ static int fan_identify(hap_acc_t *ha)
  * An optional HomeKit Event handler which can be used to track HomeKit
  * specific events.
  */
-static void fan_hap_event_handler(void* arg, esp_event_base_t event_base, int event, void *data)
+static void fan_hap_event_handler(void* arg, esp_event_base_t event_base, int32_t event, void *data)
 {
     switch(event) {
         case HAP_EVENT_PAIRING_STARTED :
@@ -131,6 +131,8 @@ static void fan_hap_event_handler(void* arg, esp_event_base_t event_base, int ev
             char *reason = (char *)data;
             ESP_LOGI(TAG, "Accessory Rebooting (Reason: %s)",  reason ? reason : "null");
             break;
+        case HAP_EVENT_PAIRING_MODE_TIMED_OUT :
+            ESP_LOGI(TAG, "Pairing Mode timed out. Please reboot the device.");
         }
         default:
             /* Silently ignore unknown events */
@@ -244,6 +246,9 @@ static void fan_thread_entry(void *p)
     /* Add a dummy Product Data */
     uint8_t product_data[] = {'E','S','P','3','2','H','A','P'};
     hap_acc_add_product_data(accessory, product_data, sizeof(product_data));
+
+    /* Add Wi-Fi Transport service required for HAP Spec R16 */
+    hap_acc_add_wifi_transport_service(accessory, 0);
 
     /* Create the Fan Service. Include the "name" since this is a user visible service  */
     service = hap_serv_fan_create(false);
